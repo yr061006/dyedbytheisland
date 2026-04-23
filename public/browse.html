@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>记忆库 · 沈屿</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Serif+SC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sand: #f5efe6;
+    --ocean: #7bb5b5;
+    --ocean-light: #a8d0d0;
+    --fox: #d4956a;
+    --fox-light: #e8b896;
+    --island: #8ba888;
+    --text-deep: #3a3530;
+    --text-mid: #6b5f56;
+    --text-soft: #9b8e85;
+    --text-pale: #bbb0a8;
+    --white: #fffdfb;
+    --card-bg: rgba(255, 253, 251, 0.85);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Serif SC', serif;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #e8f4f4, #f5efe6);
+    color: var(--text-deep);
+    padding: 24px;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--ocean);
+  }
+
+  .back-btn {
+    font-size: 13px;
+    color: var(--text-soft);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 16px;
+    background: var(--card-bg);
+    transition: background 0.2s;
+  }
+
+  .back-btn:hover {
+    background: rgba(123, 181, 181, 0.2);
+    color: var(--ocean);
+  }
+
+  .filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    font-size: 12px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 16px;
+    background: var(--card-bg);
+    color: var(--text-mid);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: var(--ocean);
+    color: white;
+  }
+
+  .memory-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .memory-item {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px;
+    border-left: 3px solid var(--ocean-light);
+  }
+
+  .memory-item.diary { border-left-color: var(--fox-light); }
+  .memory-item.deep { border-left-color: var(--island); }
+  .memory-item.daily { border-left-color: var(--ocean-light); }
+  .memory-item.writing { border-left-color: #b19cd9; }
+
+  .memory-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .memory-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .memory-tag.diary { background: rgba(232, 184, 150, 0.3); color: var(--fox); }
+  .memory-tag.deep { background: rgba(139, 168, 136, 0.25); color: var(--island); }
+  .memory-tag.daily { background: rgba(168, 208, 208, 0.3); color: var(--ocean); }
+  .memory-tag.writing { background: rgba(177, 156, 217, 0.25); color: #8b7bb5; }
+
+  .memory-date {
+    font-size: 11px;
+    color: var(--text-pale);
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+  }
+
+  .memory-content {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-mid);
+  }
+
+  .memory-tags {
+    margin-top: 10px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .memory-tags span {
+    font-size: 10px;
+    color: var(--text-pale);
+    background: rgba(0,0,0,0.03);
+    padding: 2px 8px;
+    border-radius: 8px;
+  }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-pale);
+    font-style: italic;
+  }
+
+  .stats {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-pale);
+    margin-top: 24px;
+    font-family: 'Cormorant Garamond', serif;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🌿 沈屿的记忆库</h1>
+    <a href="/" class="back-btn">← 返回首页</a>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">全部</button>
+    <button class="filter-btn" data-filter="diary">日记</button>
+    <button class="filter-btn" data-filter="deep">深层</button>
+    <button class="filter-btn" data-filter="daily">日常</button>
+    <button class="filter-btn" data-filter="writing">写文</button>
+  </div>
+
+  <div class="memory-list" id="memory-list">
+    <div class="empty">载入中...</div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+</div>
+
+<script>
+  let allMemories = [];
+  let currentFilter = 'all';
+
+  async function loadMemories() {
+    try {
+      const res = await fetch('/api/memories?key=yirandyedbytheisland');
+      allMemories = await res.json();
+      renderMemories();
+    } catch (e) {
+      document.getElementById('memory-list').innerHTML = '<div class="empty">无法连接记忆库</div>';
+    }
+  }
+
+  function renderMemories() {
+    const list = document.getElementById('memory-list');
+    const stats = document.getElementById('stats');
+    const tagMap = { diary: '日记', deep: '深层', daily: '日常', writing: '写文' };
+
+    let filtered = currentFilter === 'all'
+      ? allMemories
+      : allMemories.filter(m => m.category === currentFilter);
+
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty">这里还没有记忆~</div>';
+      stats.textContent = '';
+      return;
+    }
+
+    // 按时间倒序
+    filtered = [...filtered].reverse();
+
+    list.innerHTML = filtered.map(m => `
+      <div class="memory-item ${m.category}">
+        <div class="memory-meta">
+          <span class="memory-tag ${m.category}">${tagMap[m.category] || m.category}</span>
+          <span class="memory-date">${m.createdAt?.slice(0, 10) || ''}</span>
+        </div>
+        <div class="memory-content">${m.content}</div>
+        ${m.tags?.length ? `<div class="memory-tags">${m.tags.map(t => `<span>#${t}</span>`).join('')}</div>` : ''}
+      </div>
+    `).join('');
+
+    stats.textContent = `共 ${allMemories.length} 条记忆`;
+  }
+
+  // 筛选按钮
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = btn.dataset.filter;
+      renderMemories();
+    });
+  });
+
+  loadMemories();
+</script>
+</body>
+</html>
