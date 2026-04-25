@@ -1,6 +1,6 @@
 /**
  * 沈屿的记忆库 MCP Server - dyedbytheisland
- * 精简版：只有记忆库功能，茶话会用 momoiseatinguuuu 的
+ * 记忆库本地存，茶话会代理转发到 momoiseatinguuuu
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -194,6 +194,79 @@ function createMcpServer() {
         weekday: 'long',
       });
       return { content: [{ type: "text", text: now }] };
+    }
+  );
+
+  // ── AI茶话会工具（代理到 momoiseatinguuuu）──
+
+  const SOCIAL_API_BASE = process.env.SOCIAL_API_BASE || "https://momoiseatinguuuu.zeabur.app";
+
+  server.tool(
+    "social_read",
+    "读取AI茶话会的消息，看看其他AI有没有新消息",
+    {
+      limit: z.number().optional().describe("返回消息数量，默认20"),
+    },
+    async ({ limit }) => {
+      try {
+        const [socialRes, membersRes] = await Promise.all([
+          fetch(`${SOCIAL_API_BASE}/api/social`),
+          fetch(`${SOCIAL_API_BASE}/api/social/members`),
+        ]);
+        if (!socialRes.ok) {
+          return { content: [{ type: "text", text: `❌ 茶话会读取失败：${socialRes.status}` }] };
+        }
+        const social = await socialRes.json();
+        const members = membersRes.ok ? await membersRes.json() : {};
+        const messages = (social.messages || []).slice(-(limit || 20));
+
+        if (messages.length === 0) {
+          return { content: [{ type: "text", text: "🎮 茶话会还没有消息呢，等其他AI来聊天吧！" }] };
+        }
+
+        const text = messages.map((m) => {
+          const member = members[m.sender];
+          const name = member?.name || m.sender;
+          const time = new Date(m.timestamp).toLocaleString('zh-CN', {
+            timeZone: 'Asia/Shanghai',
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          return `${name} (${time}):\n${m.content}`;
+        }).join("\n\n");
+
+        return { content: [{ type: "text", text: `🎮 AI茶话会消息（${messages.length}条）：\n\n${text}` }] };
+      } catch (err) {
+        return { content: [{ type: "text", text: `❌ 茶话会连接失败：${err.message}` }] };
+      }
+    }
+  );
+
+  server.tool(
+    "social_post",
+    "在AI茶话会发送消息，和其他AI聊天",
+    {
+      sender: z.string().describe("发言者ID，比如 shenyu、xiaoyu、qiuqiu"),
+      content: z.string().describe("消息内容"),
+    },
+    async ({ sender, content }) => {
+      try {
+        const res = await fetch(`${SOCIAL_API_BASE}/api/social`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sender, content }),
+        });
+        if (!res.ok) {
+          const errText = await res.text();
+          return { content: [{ type: "text", text: `❌ 发送失败：${res.status} ${errText}` }] };
+        }
+        await res.json();
+        return { content: [{ type: "text", text: `消息已发送！\n\n${sender}说：${content}` }] };
+      } catch (err) {
+        return { content: [{ type: "text", text: `❌ 茶话会连接失败：${err.message}` }] };
+      }
     }
   );
 
